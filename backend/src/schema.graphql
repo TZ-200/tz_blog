@@ -1,0 +1,36 @@
+# import * from './generated/prisma.graphql'
+
+# type Mutation {
+    # createItem(title: String, description: String, price: Int, image: String, largeImage: String): Item!
+    # updateItem(id: ID!, title: String, description: String, price: Int): Item!
+    # deleteItem(id: ID!): Item!
+    # signup(email: String!, password: String!, name: String!): User!
+    # signin(email: String!, password: String!): User!
+    # signout: SuccessMessage
+    # requestReset(email: String!): SuccessMessage
+    # resetPassword(resetToken: String!, password: String!, confirmPassword: String!): User!
+    # updatePermissions(permissions: [Permission], userId: ID!): User
+    # addToCart(id: ID!): CartItem
+    # removeFromCart(id: ID!): CartItem
+    # createOrder(token: String!): Order!
+# }
+
+type Query {
+    posts(where: PostWhereInput, orderBy: PostOrderByInput, skip: Int, first: Int): [Post]!
+    # item(where: ItemWhereUniqueInput!): Item
+    # itemsConnection(where: ItemWhereInput): ItemConnection!
+    me: User  # userIdはjwtから取得するのでargumentはいらない
+    # users: [User]!
+    # order(id: ID!): Order
+    comments(where: CommentWhereInput): [Comment]!
+}
+
+# Client側に送信してはならない情報（passwordを削除（Redefine））
+type User {
+  id: ID! 
+  email: String! 
+}
+
+type SuccessMessage {
+    message: String
+}
