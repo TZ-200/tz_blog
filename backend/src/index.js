@@ -13,32 +13,31 @@ const server = createServer()
  */
 
 
-// // Use express middleware to handle cookies (JWT)
-// server.express.use(cookieParser())
+// Use express middleware to handle cookies (JWT)
+server.express.use(cookieParser())
 
-// // Decode the JWT so we can get the user Id on each request
-// server.express.use( (req, res, next) => {
-//     const { token } = req.cookies
-//     if(token) {
-//         const { userId } = jwt.verify(token, process.env.APP_SECRET)
-//         // put the userId onto the request for future request to access
-//         req.userId = userId
-//     }
-//     // tokenがあった場合、そのtokenを元のrequestに上乗せして
-//     // requestの目的地に流す（こうすることでresolverの中でいちいちjwtをverifyしなくてすむ）
-//     next() 
-// })
+// Decode the JWT so we can get the user Id on each request
+server.express.use( (req, res, next) => {
+    const { token } = req.cookies
+    if(token) {
+        const { userId } = jwt.verify(token, process.env.APP_SECRET)
+        // put the userId onto the request for future request to access
+        req.userId = userId
+    }
+    // tokenがあった場合、そのtokenを元のrequestに上乗せして
+    // requestの目的地に流す（こうすることでresolverの中でいちいちjwtをverifyしなくてすむ）
+    next() 
+})
 
-// // Use express middleware to populate current user
-// server.express.use( async (req, res, next) => {
-//     // If they are not logged in, skip this
-//     if(!req.userId) return next()
-//     const user = await db.query.user(
-//         { where: { id: req.userId }}, '{ id, permissions, email, name }')
-    
-//     req.user = user
-//     next()
-// })
+// Use express middleware to populate current user
+server.express.use( async (req, res, next) => {
+    // If they are not logged in, skip this
+    if(!req.userId) return next()
+    const user = await db.query.user(
+        { where: { id: req.userId }}, '{ id, email, name }')
+    req.user = user
+    next()
+})
 
 //
 server.start({

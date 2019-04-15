@@ -56,29 +56,45 @@ const Mutations = {
     //     return ctx.db.mutation.deleteItem({ where }, info)
     // },
 
-    // async signup(parent, args, ctx, info) {
-    //     // emailは全部小文字にした方が色々と都合がいいらしい
-    //     args.email = args.email.toLowerCase()
-    //     // hash their password
-    //     const password = await bcrypt.hash(args.password, 10)
-    //     // create the user in the database
-    //     const user = await ctx.db.mutation.createUser({
-    //         data: {
-    //             ...args,
-    //             password,
-    //             permissions: { set: ['USER'] } // enumの場合は左のようにする
-    //         }
-    //     }, info)
-    //     // create jwt token
-    //     const token = jwt.sign({ userId: user.id }, process.env.APP_SECRET)
-    //     // set the jwt as acookie on the response
-    //     ctx.response.cookie('token', token, {
-    //         httpOnly: true,
-    //         maxAge: 1000 * 60 * 60 * 24 * 365,  // 1 year cookie
-    //     })
-    //     // return the user to the browser
-    //     return user;
-    // },
+    async signup(parent, args, ctx, info) {
+        // emailは全部小文字にした方が色々と都合がいいらしい
+        args.email = args.email.toLowerCase()
+        // hash their password
+        const password = await bcrypt.hash(args.password, 10)
+        // create the user in the database
+        const user = await ctx.db.mutation.createUser({
+            data: {
+                ...args,
+                password,
+            }
+        }, info)
+        // // create jwt token
+        const token = jwt.sign({ userId: user.id }, process.env.APP_SECRET)
+        // // set the jwt as acookie on the response
+        ctx.response.cookie('token', token, {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 60 * 24 * 365,  // 1 year cookie
+        })
+        // return the user to the browser
+        return user;
+    },
+
+    async createThread(parent, args, ctx, info) {
+        if(!ctx.request.userId){
+            throw new Error('You must be logged in to do that!')
+        }
+        const thread = await ctx.db.mutation.createThread({
+            data:{
+                author: {
+                    connect: {
+                        id: ctx.request.userId
+                    }
+                },
+                ...args
+            }
+        }, info)
+        return thread
+    }
 
     // async signin( parent, { email, password }, ctx, info) {
     //     // check if there is a user with that email

@@ -1,10 +1,10 @@
 # import * from './generated/prisma.graphql'
 
-# type Mutation {
+type Mutation {
     # createItem(title: String, description: String, price: Int, image: String, largeImage: String): Item!
     # updateItem(id: ID!, title: String, description: String, price: Int): Item!
     # deleteItem(id: ID!): Item!
-    # signup(email: String!, password: String!, name: String!): User!
+    signup(email: String!, password: String!, name: String!): User!
     # signin(email: String!, password: String!): User!
     # signout: SuccessMessage
     # requestReset(email: String!): SuccessMessage
@@ -13,15 +13,19 @@
     # addToCart(id: ID!): CartItem
     # removeFromCart(id: ID!): CartItem
     # createOrder(token: String!): Order!
-# }
+    createThread(title: String!, text: String!, image: String): Thread!
+    # createComment(text: String!, thread: ID!): Comment!
+    # upvote(comment: ID!): upvote!
+}
 
 type Query {
-    posts(where: PostWhereInput, orderBy: PostOrderByInput, skip: Int, first: Int): [Post]!
+    # posts(where: PostWhereInput, orderBy: PostOrderByInput, skip: Int, first: Int): [Post]!
     # item(where: ItemWhereUniqueInput!): Item
     # itemsConnection(where: ItemWhereInput): ItemConnection!
     me: User  # userIdはjwtから取得するのでargumentはいらない
-    # users: [User]!
+    users: [User]!
     # order(id: ID!): Order
+    threads(where: ThreadWhereInput): [Thread]!
     comments(where: CommentWhereInput): [Comment]!
 }
 

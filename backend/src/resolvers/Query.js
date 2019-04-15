@@ -13,10 +13,12 @@ const Query = {
     // }
 
     //とりあえず
-    posts: forwardTo('db'),
+    users: forwardTo('db'),
+    threads: forwardTo('db'),
     comments: forwardTo('db'),
 
     me(parent, args, ctx, info) {
+        console.log('me query!');
         // check if there is a current user id (middlewareでuserIdがrequestに付加されているかチェック)
         if(!ctx.request.userId){
             return null

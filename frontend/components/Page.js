@@ -1,7 +1,5 @@
 import React, { Component } from 'react';
 import styled, { ThemeProvider, injectGlobal } from 'styled-components'
-import Header from './Header'
-import Meta from './Meta'
 
 /**
  * React context apiを使用することで他の子コンポーネントで流用できる（propとしてpassする必要がない）
@@ -62,8 +60,6 @@ class Page extends Component {
         return (
             <ThemeProvider theme={theme}>
                 <StyledPage>
-                    <Meta/>
-                    <Header />
                     <Inner>{this.props.children}</Inner>
                 </StyledPage>
             </ThemeProvider>

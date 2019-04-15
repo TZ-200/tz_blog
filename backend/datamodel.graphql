@@ -1,25 +1,38 @@
 type User {
   id: ID! @unique
+  name: String!
   email: String! @unique
   password: String!
+  description: String
+  image: String
+  Comments: [Comment!]
+  Threads: [Thread!]
+  Upvotes: [Upvote!]
 }
 
-type Post {
+type Thread {
   id: ID! @unique
   title: String!
   text: String!
-  comments: [Comment!]!
-  image: [String!]!
-  thumbnail: String!
+  image: String
   createdAt: DateTime!
   updatedAt: DateTime!
+  author: User!
+  comments: [Comment!]
 }
 
 type Comment {
   id: ID! @unique
-  author: String!
   text: String!
   createdAt: DateTime!
   updatedAt: DateTime!
-  post: Post!
+  author: User! 
+  thread: Thread!
+  upvotes: [Upvote!]
+}
+
+type Upvote {
+  id: ID! @unique
+  author: User!
+  Comment: Comment!
 }

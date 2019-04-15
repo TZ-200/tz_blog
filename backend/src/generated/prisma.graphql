@@ -1,11 +1,15 @@
 # source: https://us1.prisma.sh/ikyohei2100-08fc7c/tz-blog/dev
-# timestamp: Sat Apr 13 2019 20:40:32 GMT+0900 (GMT+09:00)
+# timestamp: Mon Apr 15 2019 12:51:59 GMT+0900 (GMT+09:00)
 
 type AggregateComment {
   count: Int!
 }
 
-type AggregatePost {
+type AggregateThread {
+  count: Int!
+}
+
+type AggregateUpvote {
   count: Int!
 }
 
@@ -20,11 +24,12 @@ type BatchPayload {
 
 type Comment implements Node {
   id: ID!
-  author: String!
   text: String!
   createdAt: DateTime!
   updatedAt: DateTime!
-  post: Post!
+  author: User!
+  thread: Thread!
+  upvotes(where: UpvoteWhereInput, orderBy: UpvoteOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Upvote!]
 }
 
 """A connection to a list of items."""
@@ -39,20 +44,46 @@ type CommentConnection {
 
 input CommentCreateInput {
   id: ID
-  author: String!
   text: String!
-  post: PostCreateOneWithoutCommentsInput!
+  author: UserCreateOneWithoutCommentsInput!
+  thread: ThreadCreateOneWithoutCommentsInput!
+  upvotes: UpvoteCreateManyWithoutCommentInput
 }
 
-input CommentCreateManyWithoutPostInput {
-  create: [CommentCreateWithoutPostInput!]
+input CommentCreateManyWithoutAuthorInput {
+  create: [CommentCreateWithoutAuthorInput!]
   connect: [CommentWhereUniqueInput!]
 }
 
-input CommentCreateWithoutPostInput {
+input CommentCreateManyWithoutThreadInput {
+  create: [CommentCreateWithoutThreadInput!]
+  connect: [CommentWhereUniqueInput!]
+}
+
+input CommentCreateOneWithoutUpvotesInput {
+  create: CommentCreateWithoutUpvotesInput
+  connect: CommentWhereUniqueInput
+}
+
+input CommentCreateWithoutAuthorInput {
   id: ID
-  author: String!
   text: String!
+  thread: ThreadCreateOneWithoutCommentsInput!
+  upvotes: UpvoteCreateManyWithoutCommentInput
+}
+
+input CommentCreateWithoutThreadInput {
+  id: ID
+  text: String!
+  author: UserCreateOneWithoutCommentsInput!
+  upvotes: UpvoteCreateManyWithoutCommentInput
+}
+
+input CommentCreateWithoutUpvotesInput {
+  id: ID
+  text: String!
+  author: UserCreateOneWithoutCommentsInput!
+  thread: ThreadCreateOneWithoutCommentsInput!
 }
 
 """An edge in a connection."""
@@ -67,8 +98,6 @@ type CommentEdge {
 enum CommentOrderByInput {
   id_ASC
   id_DESC
-  author_ASC
-  author_DESC
   text_ASC
   text_DESC
   createdAt_ASC
@@ -79,7 +108,6 @@ enum CommentOrderByInput {
 
 type CommentPreviousValues {
   id: ID!
-  author: String!
   text: String!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -134,46 +162,6 @@ input CommentScalarWhereInput {
 
   """All values not ending with the given string."""
   id_not_ends_with: ID
-  author: String
-
-  """All values that are not equal to given value."""
-  author_not: String
-
-  """All values that are contained in given list."""
-  author_in: [String!]
-
-  """All values that are not contained in given list."""
-  author_not_in: [String!]
-
-  """All values less than the given value."""
-  author_lt: String
-
-  """All values less than or equal the given value."""
-  author_lte: String
-
-  """All values greater than the given value."""
-  author_gt: String
-
-  """All values greater than or equal the given value."""
-  author_gte: String
-
-  """All values containing the given string."""
-  author_contains: String
-
-  """All values not containing the given string."""
-  author_not_contains: String
-
-  """All values starting with the given string."""
-  author_starts_with: String
-
-  """All values not starting with the given string."""
-  author_not_starts_with: String
-
-  """All values ending with the given string."""
-  author_ends_with: String
-
-  """All values not ending with the given string."""
-  author_not_ends_with: String
   text: String
 
   """All values that are not equal to given value."""
@@ -300,31 +288,42 @@ input CommentSubscriptionWhereInput {
 }
 
 input CommentUpdateInput {
-  author: String
   text: String
-  post: PostUpdateOneRequiredWithoutCommentsInput
+  author: UserUpdateOneRequiredWithoutCommentsInput
+  thread: ThreadUpdateOneRequiredWithoutCommentsInput
+  upvotes: UpvoteUpdateManyWithoutCommentInput
 }
 
 input CommentUpdateManyDataInput {
-  author: String
   text: String
 }
 
 input CommentUpdateManyMutationInput {
-  author: String
   text: String
 }
 
-input CommentUpdateManyWithoutPostInput {
-  create: [CommentCreateWithoutPostInput!]
+input CommentUpdateManyWithoutAuthorInput {
+  create: [CommentCreateWithoutAuthorInput!]
   connect: [CommentWhereUniqueInput!]
   set: [CommentWhereUniqueInput!]
   disconnect: [CommentWhereUniqueInput!]
   delete: [CommentWhereUniqueInput!]
-  update: [CommentUpdateWithWhereUniqueWithoutPostInput!]
+  update: [CommentUpdateWithWhereUniqueWithoutAuthorInput!]
   updateMany: [CommentUpdateManyWithWhereNestedInput!]
   deleteMany: [CommentScalarWhereInput!]
-  upsert: [CommentUpsertWithWhereUniqueWithoutPostInput!]
+  upsert: [CommentUpsertWithWhereUniqueWithoutAuthorInput!]
+}
+
+input CommentUpdateManyWithoutThreadInput {
+  create: [CommentCreateWithoutThreadInput!]
+  connect: [CommentWhereUniqueInput!]
+  set: [CommentWhereUniqueInput!]
+  disconnect: [CommentWhereUniqueInput!]
+  delete: [CommentWhereUniqueInput!]
+  update: [CommentUpdateWithWhereUniqueWithoutThreadInput!]
+  updateMany: [CommentUpdateManyWithWhereNestedInput!]
+  deleteMany: [CommentScalarWhereInput!]
+  upsert: [CommentUpsertWithWhereUniqueWithoutThreadInput!]
 }
 
 input CommentUpdateManyWithWhereNestedInput {
@@ -332,20 +331,56 @@ input CommentUpdateManyWithWhereNestedInput {
   data: CommentUpdateManyDataInput!
 }
 
-input CommentUpdateWithoutPostDataInput {
-  author: String
+input CommentUpdateOneRequiredWithoutUpvotesInput {
+  create: CommentCreateWithoutUpvotesInput
+  connect: CommentWhereUniqueInput
+  update: CommentUpdateWithoutUpvotesDataInput
+  upsert: CommentUpsertWithoutUpvotesInput
+}
+
+input CommentUpdateWithoutAuthorDataInput {
   text: String
+  thread: ThreadUpdateOneRequiredWithoutCommentsInput
+  upvotes: UpvoteUpdateManyWithoutCommentInput
 }
 
-input CommentUpdateWithWhereUniqueWithoutPostInput {
-  where: CommentWhereUniqueInput!
-  data: CommentUpdateWithoutPostDataInput!
+input CommentUpdateWithoutThreadDataInput {
+  text: String
+  author: UserUpdateOneRequiredWithoutCommentsInput
+  upvotes: UpvoteUpdateManyWithoutCommentInput
 }
 
-input CommentUpsertWithWhereUniqueWithoutPostInput {
+input CommentUpdateWithoutUpvotesDataInput {
+  text: String
+  author: UserUpdateOneRequiredWithoutCommentsInput
+  thread: ThreadUpdateOneRequiredWithoutCommentsInput
+}
+
+input CommentUpdateWithWhereUniqueWithoutAuthorInput {
   where: CommentWhereUniqueInput!
-  update: CommentUpdateWithoutPostDataInput!
-  create: CommentCreateWithoutPostInput!
+  data: CommentUpdateWithoutAuthorDataInput!
+}
+
+input CommentUpdateWithWhereUniqueWithoutThreadInput {
+  where: CommentWhereUniqueInput!
+  data: CommentUpdateWithoutThreadDataInput!
+}
+
+input CommentUpsertWithoutUpvotesInput {
+  update: CommentUpdateWithoutUpvotesDataInput!
+  create: CommentCreateWithoutUpvotesInput!
+}
+
+input CommentUpsertWithWhereUniqueWithoutAuthorInput {
+  where: CommentWhereUniqueInput!
+  update: CommentUpdateWithoutAuthorDataInput!
+  create: CommentCreateWithoutAuthorInput!
+}
+
+input CommentUpsertWithWhereUniqueWithoutThreadInput {
+  where: CommentWhereUniqueInput!
+  update: CommentUpdateWithoutThreadDataInput!
+  create: CommentCreateWithoutThreadInput!
 }
 
 input CommentWhereInput {
@@ -397,46 +432,6 @@ input CommentWhereInput {
 
   """All values not ending with the given string."""
   id_not_ends_with: ID
-  author: String
-
-  """All values that are not equal to given value."""
-  author_not: String
-
-  """All values that are contained in given list."""
-  author_in: [String!]
-
-  """All values that are not contained in given list."""
-  author_not_in: [String!]
-
-  """All values less than the given value."""
-  author_lt: String
-
-  """All values less than or equal the given value."""
-  author_lte: String
-
-  """All values greater than the given value."""
-  author_gt: String
-
-  """All values greater than or equal the given value."""
-  author_gte: String
-
-  """All values containing the given string."""
-  author_contains: String
-
-  """All values not containing the given string."""
-  author_not_contains: String
-
-  """All values starting with the given string."""
-  author_starts_with: String
-
-  """All values not starting with the given string."""
-  author_not_starts_with: String
-
-  """All values ending with the given string."""
-  author_ends_with: String
-
-  """All values not ending with the given string."""
-  author_not_ends_with: String
   text: String
 
   """All values that are not equal to given value."""
@@ -521,7 +516,11 @@ input CommentWhereInput {
 
   """All values greater than or equal the given value."""
   updatedAt_gte: DateTime
-  post: PostWhereInput
+  author: UserWhereInput
+  thread: ThreadWhereInput
+  upvotes_every: UpvoteWhereInput
+  upvotes_some: UpvoteWhereInput
+  upvotes_none: UpvoteWhereInput
 }
 
 input CommentWhereUniqueInput {
@@ -538,23 +537,28 @@ scalar Long
 
 type Mutation {
   createUser(data: UserCreateInput!): User!
-  createPost(data: PostCreateInput!): Post!
+  createThread(data: ThreadCreateInput!): Thread!
   createComment(data: CommentCreateInput!): Comment!
+  createUpvote(data: UpvoteCreateInput!): Upvote!
   updateUser(data: UserUpdateInput!, where: UserWhereUniqueInput!): User
-  updatePost(data: PostUpdateInput!, where: PostWhereUniqueInput!): Post
+  updateThread(data: ThreadUpdateInput!, where: ThreadWhereUniqueInput!): Thread
   updateComment(data: CommentUpdateInput!, where: CommentWhereUniqueInput!): Comment
+  updateUpvote(data: UpvoteUpdateInput!, where: UpvoteWhereUniqueInput!): Upvote
   deleteUser(where: UserWhereUniqueInput!): User
-  deletePost(where: PostWhereUniqueInput!): Post
+  deleteThread(where: ThreadWhereUniqueInput!): Thread
   deleteComment(where: CommentWhereUniqueInput!): Comment
+  deleteUpvote(where: UpvoteWhereUniqueInput!): Upvote
   upsertUser(where: UserWhereUniqueInput!, create: UserCreateInput!, update: UserUpdateInput!): User!
-  upsertPost(where: PostWhereUniqueInput!, create: PostCreateInput!, update: PostUpdateInput!): Post!
+  upsertThread(where: ThreadWhereUniqueInput!, create: ThreadCreateInput!, update: ThreadUpdateInput!): Thread!
   upsertComment(where: CommentWhereUniqueInput!, create: CommentCreateInput!, update: CommentUpdateInput!): Comment!
+  upsertUpvote(where: UpvoteWhereUniqueInput!, create: UpvoteCreateInput!, update: UpvoteUpdateInput!): Upvote!
   updateManyUsers(data: UserUpdateManyMutationInput!, where: UserWhereInput): BatchPayload!
-  updateManyPosts(data: PostUpdateManyMutationInput!, where: PostWhereInput): BatchPayload!
+  updateManyThreads(data: ThreadUpdateManyMutationInput!, where: ThreadWhereInput): BatchPayload!
   updateManyComments(data: CommentUpdateManyMutationInput!, where: CommentWhereInput): BatchPayload!
   deleteManyUsers(where: UserWhereInput): BatchPayload!
-  deleteManyPosts(where: PostWhereInput): BatchPayload!
+  deleteManyThreads(where: ThreadWhereInput): BatchPayload!
   deleteManyComments(where: CommentWhereInput): BatchPayload!
+  deleteManyUpvotes(where: UpvoteWhereInput): BatchPayload!
 }
 
 enum MutationType {
@@ -584,173 +588,132 @@ type PageInfo {
   endCursor: String
 }
 
-type Post implements Node {
+type Query {
+  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
+  threads(where: ThreadWhereInput, orderBy: ThreadOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Thread]!
+  comments(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Comment]!
+  upvotes(where: UpvoteWhereInput, orderBy: UpvoteOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Upvote]!
+  user(where: UserWhereUniqueInput!): User
+  thread(where: ThreadWhereUniqueInput!): Thread
+  comment(where: CommentWhereUniqueInput!): Comment
+  upvote(where: UpvoteWhereUniqueInput!): Upvote
+  usersConnection(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): UserConnection!
+  threadsConnection(where: ThreadWhereInput, orderBy: ThreadOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): ThreadConnection!
+  commentsConnection(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): CommentConnection!
+  upvotesConnection(where: UpvoteWhereInput, orderBy: UpvoteOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): UpvoteConnection!
+
+  """Fetches an object given its ID"""
+  node(
+    """The ID of an object"""
+    id: ID!
+  ): Node
+}
+
+type Subscription {
+  user(where: UserSubscriptionWhereInput): UserSubscriptionPayload
+  thread(where: ThreadSubscriptionWhereInput): ThreadSubscriptionPayload
+  comment(where: CommentSubscriptionWhereInput): CommentSubscriptionPayload
+  upvote(where: UpvoteSubscriptionWhereInput): UpvoteSubscriptionPayload
+}
+
+type Thread implements Node {
   id: ID!
   title: String!
   text: String!
-  comments(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Comment!]
-  image: [String!]!
-  thumbnail: String!
+  image: String
   createdAt: DateTime!
   updatedAt: DateTime!
+  author: User!
+  comments(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Comment!]
 }
 
 """A connection to a list of items."""
-type PostConnection {
+type ThreadConnection {
   """Information to aid in pagination."""
   pageInfo: PageInfo!
 
   """A list of edges."""
-  edges: [PostEdge]!
-  aggregate: AggregatePost!
+  edges: [ThreadEdge]!
+  aggregate: AggregateThread!
 }
 
-input PostCreateimageInput {
-  set: [String!]
-}
-
-input PostCreateInput {
+input ThreadCreateInput {
   id: ID
   title: String!
   text: String!
-  thumbnail: String!
-  image: PostCreateimageInput
-  comments: CommentCreateManyWithoutPostInput
+  image: String
+  author: UserCreateOneWithoutThreadsInput!
+  comments: CommentCreateManyWithoutThreadInput
 }
 
-input PostCreateOneWithoutCommentsInput {
-  create: PostCreateWithoutCommentsInput
-  connect: PostWhereUniqueInput
+input ThreadCreateManyWithoutAuthorInput {
+  create: [ThreadCreateWithoutAuthorInput!]
+  connect: [ThreadWhereUniqueInput!]
 }
 
-input PostCreateWithoutCommentsInput {
+input ThreadCreateOneWithoutCommentsInput {
+  create: ThreadCreateWithoutCommentsInput
+  connect: ThreadWhereUniqueInput
+}
+
+input ThreadCreateWithoutAuthorInput {
   id: ID
   title: String!
   text: String!
-  thumbnail: String!
-  image: PostCreateimageInput
+  image: String
+  comments: CommentCreateManyWithoutThreadInput
+}
+
+input ThreadCreateWithoutCommentsInput {
+  id: ID
+  title: String!
+  text: String!
+  image: String
+  author: UserCreateOneWithoutThreadsInput!
 }
 
 """An edge in a connection."""
-type PostEdge {
+type ThreadEdge {
   """The item at the end of the edge."""
-  node: Post!
+  node: Thread!
 
   """A cursor for use in pagination."""
   cursor: String!
 }
 
-enum PostOrderByInput {
+enum ThreadOrderByInput {
   id_ASC
   id_DESC
   title_ASC
   title_DESC
   text_ASC
   text_DESC
-  thumbnail_ASC
-  thumbnail_DESC
+  image_ASC
+  image_DESC
   createdAt_ASC
   createdAt_DESC
   updatedAt_ASC
   updatedAt_DESC
 }
 
-type PostPreviousValues {
+type ThreadPreviousValues {
   id: ID!
   title: String!
   text: String!
-  image: [String!]!
-  thumbnail: String!
+  image: String
   createdAt: DateTime!
   updatedAt: DateTime!
 }
 
-type PostSubscriptionPayload {
-  mutation: MutationType!
-  node: Post
-  updatedFields: [String!]
-  previousValues: PostPreviousValues
-}
-
-input PostSubscriptionWhereInput {
+input ThreadScalarWhereInput {
   """Logical AND on all given filters."""
-  AND: [PostSubscriptionWhereInput!]
+  AND: [ThreadScalarWhereInput!]
 
   """Logical OR on all given filters."""
-  OR: [PostSubscriptionWhereInput!]
+  OR: [ThreadScalarWhereInput!]
 
   """Logical NOT on all given filters combined by AND."""
-  NOT: [PostSubscriptionWhereInput!]
-
-  """
-  The subscription event gets dispatched when it's listed in mutation_in
-  """
-  mutation_in: [MutationType!]
-
-  """
-  The subscription event gets only dispatched when one of the updated fields names is included in this list
-  """
-  updatedFields_contains: String
-
-  """
-  The subscription event gets only dispatched when all of the field names included in this list have been updated
-  """
-  updatedFields_contains_every: [String!]
-
-  """
-  The subscription event gets only dispatched when some of the field names included in this list have been updated
-  """
-  updatedFields_contains_some: [String!]
-  node: PostWhereInput
-}
-
-input PostUpdateimageInput {
-  set: [String!]
-}
-
-input PostUpdateInput {
-  title: String
-  text: String
-  thumbnail: String
-  image: PostUpdateimageInput
-  comments: CommentUpdateManyWithoutPostInput
-}
-
-input PostUpdateManyMutationInput {
-  title: String
-  text: String
-  thumbnail: String
-  image: PostUpdateimageInput
-}
-
-input PostUpdateOneRequiredWithoutCommentsInput {
-  create: PostCreateWithoutCommentsInput
-  connect: PostWhereUniqueInput
-  update: PostUpdateWithoutCommentsDataInput
-  upsert: PostUpsertWithoutCommentsInput
-}
-
-input PostUpdateWithoutCommentsDataInput {
-  title: String
-  text: String
-  thumbnail: String
-  image: PostUpdateimageInput
-}
-
-input PostUpsertWithoutCommentsInput {
-  update: PostUpdateWithoutCommentsDataInput!
-  create: PostCreateWithoutCommentsInput!
-}
-
-input PostWhereInput {
-  """Logical AND on all given filters."""
-  AND: [PostWhereInput!]
-
-  """Logical OR on all given filters."""
-  OR: [PostWhereInput!]
-
-  """Logical NOT on all given filters combined by AND."""
-  NOT: [PostWhereInput!]
+  NOT: [ThreadScalarWhereInput!]
   id: ID
 
   """All values that are not equal to given value."""
@@ -871,46 +834,46 @@ input PostWhereInput {
 
   """All values not ending with the given string."""
   text_not_ends_with: String
-  thumbnail: String
+  image: String
 
   """All values that are not equal to given value."""
-  thumbnail_not: String
+  image_not: String
 
   """All values that are contained in given list."""
-  thumbnail_in: [String!]
+  image_in: [String!]
 
   """All values that are not contained in given list."""
-  thumbnail_not_in: [String!]
+  image_not_in: [String!]
 
   """All values less than the given value."""
-  thumbnail_lt: String
+  image_lt: String
 
   """All values less than or equal the given value."""
-  thumbnail_lte: String
+  image_lte: String
 
   """All values greater than the given value."""
-  thumbnail_gt: String
+  image_gt: String
 
   """All values greater than or equal the given value."""
-  thumbnail_gte: String
+  image_gte: String
 
   """All values containing the given string."""
-  thumbnail_contains: String
+  image_contains: String
 
   """All values not containing the given string."""
-  thumbnail_not_contains: String
+  image_not_contains: String
 
   """All values starting with the given string."""
-  thumbnail_starts_with: String
+  image_starts_with: String
 
   """All values not starting with the given string."""
-  thumbnail_not_starts_with: String
+  image_not_starts_with: String
 
   """All values ending with the given string."""
-  thumbnail_ends_with: String
+  image_ends_with: String
 
   """All values not ending with the given string."""
-  thumbnail_not_ends_with: String
+  image_not_ends_with: String
   createdAt: DateTime
 
   """All values that are not equal to given value."""
@@ -955,43 +918,622 @@ input PostWhereInput {
 
   """All values greater than or equal the given value."""
   updatedAt_gte: DateTime
+}
+
+type ThreadSubscriptionPayload {
+  mutation: MutationType!
+  node: Thread
+  updatedFields: [String!]
+  previousValues: ThreadPreviousValues
+}
+
+input ThreadSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [ThreadSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [ThreadSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [ThreadSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: ThreadWhereInput
+}
+
+input ThreadUpdateInput {
+  title: String
+  text: String
+  image: String
+  author: UserUpdateOneRequiredWithoutThreadsInput
+  comments: CommentUpdateManyWithoutThreadInput
+}
+
+input ThreadUpdateManyDataInput {
+  title: String
+  text: String
+  image: String
+}
+
+input ThreadUpdateManyMutationInput {
+  title: String
+  text: String
+  image: String
+}
+
+input ThreadUpdateManyWithoutAuthorInput {
+  create: [ThreadCreateWithoutAuthorInput!]
+  connect: [ThreadWhereUniqueInput!]
+  set: [ThreadWhereUniqueInput!]
+  disconnect: [ThreadWhereUniqueInput!]
+  delete: [ThreadWhereUniqueInput!]
+  update: [ThreadUpdateWithWhereUniqueWithoutAuthorInput!]
+  updateMany: [ThreadUpdateManyWithWhereNestedInput!]
+  deleteMany: [ThreadScalarWhereInput!]
+  upsert: [ThreadUpsertWithWhereUniqueWithoutAuthorInput!]
+}
+
+input ThreadUpdateManyWithWhereNestedInput {
+  where: ThreadScalarWhereInput!
+  data: ThreadUpdateManyDataInput!
+}
+
+input ThreadUpdateOneRequiredWithoutCommentsInput {
+  create: ThreadCreateWithoutCommentsInput
+  connect: ThreadWhereUniqueInput
+  update: ThreadUpdateWithoutCommentsDataInput
+  upsert: ThreadUpsertWithoutCommentsInput
+}
+
+input ThreadUpdateWithoutAuthorDataInput {
+  title: String
+  text: String
+  image: String
+  comments: CommentUpdateManyWithoutThreadInput
+}
+
+input ThreadUpdateWithoutCommentsDataInput {
+  title: String
+  text: String
+  image: String
+  author: UserUpdateOneRequiredWithoutThreadsInput
+}
+
+input ThreadUpdateWithWhereUniqueWithoutAuthorInput {
+  where: ThreadWhereUniqueInput!
+  data: ThreadUpdateWithoutAuthorDataInput!
+}
+
+input ThreadUpsertWithoutCommentsInput {
+  update: ThreadUpdateWithoutCommentsDataInput!
+  create: ThreadCreateWithoutCommentsInput!
+}
+
+input ThreadUpsertWithWhereUniqueWithoutAuthorInput {
+  where: ThreadWhereUniqueInput!
+  update: ThreadUpdateWithoutAuthorDataInput!
+  create: ThreadCreateWithoutAuthorInput!
+}
+
+input ThreadWhereInput {
+  """Logical AND on all given filters."""
+  AND: [ThreadWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [ThreadWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [ThreadWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  title: String
+
+  """All values that are not equal to given value."""
+  title_not: String
+
+  """All values that are contained in given list."""
+  title_in: [String!]
+
+  """All values that are not contained in given list."""
+  title_not_in: [String!]
+
+  """All values less than the given value."""
+  title_lt: String
+
+  """All values less than or equal the given value."""
+  title_lte: String
+
+  """All values greater than the given value."""
+  title_gt: String
+
+  """All values greater than or equal the given value."""
+  title_gte: String
+
+  """All values containing the given string."""
+  title_contains: String
+
+  """All values not containing the given string."""
+  title_not_contains: String
+
+  """All values starting with the given string."""
+  title_starts_with: String
+
+  """All values not starting with the given string."""
+  title_not_starts_with: String
+
+  """All values ending with the given string."""
+  title_ends_with: String
+
+  """All values not ending with the given string."""
+  title_not_ends_with: String
+  text: String
+
+  """All values that are not equal to given value."""
+  text_not: String
+
+  """All values that are contained in given list."""
+  text_in: [String!]
+
+  """All values that are not contained in given list."""
+  text_not_in: [String!]
+
+  """All values less than the given value."""
+  text_lt: String
+
+  """All values less than or equal the given value."""
+  text_lte: String
+
+  """All values greater than the given value."""
+  text_gt: String
+
+  """All values greater than or equal the given value."""
+  text_gte: String
+
+  """All values containing the given string."""
+  text_contains: String
+
+  """All values not containing the given string."""
+  text_not_contains: String
+
+  """All values starting with the given string."""
+  text_starts_with: String
+
+  """All values not starting with the given string."""
+  text_not_starts_with: String
+
+  """All values ending with the given string."""
+  text_ends_with: String
+
+  """All values not ending with the given string."""
+  text_not_ends_with: String
+  image: String
+
+  """All values that are not equal to given value."""
+  image_not: String
+
+  """All values that are contained in given list."""
+  image_in: [String!]
+
+  """All values that are not contained in given list."""
+  image_not_in: [String!]
+
+  """All values less than the given value."""
+  image_lt: String
+
+  """All values less than or equal the given value."""
+  image_lte: String
+
+  """All values greater than the given value."""
+  image_gt: String
+
+  """All values greater than or equal the given value."""
+  image_gte: String
+
+  """All values containing the given string."""
+  image_contains: String
+
+  """All values not containing the given string."""
+  image_not_contains: String
+
+  """All values starting with the given string."""
+  image_starts_with: String
+
+  """All values not starting with the given string."""
+  image_not_starts_with: String
+
+  """All values ending with the given string."""
+  image_ends_with: String
+
+  """All values not ending with the given string."""
+  image_not_ends_with: String
+  createdAt: DateTime
+
+  """All values that are not equal to given value."""
+  createdAt_not: DateTime
+
+  """All values that are contained in given list."""
+  createdAt_in: [DateTime!]
+
+  """All values that are not contained in given list."""
+  createdAt_not_in: [DateTime!]
+
+  """All values less than the given value."""
+  createdAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  createdAt_lte: DateTime
+
+  """All values greater than the given value."""
+  createdAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+
+  """All values that are not equal to given value."""
+  updatedAt_not: DateTime
+
+  """All values that are contained in given list."""
+  updatedAt_in: [DateTime!]
+
+  """All values that are not contained in given list."""
+  updatedAt_not_in: [DateTime!]
+
+  """All values less than the given value."""
+  updatedAt_lt: DateTime
+
+  """All values less than or equal the given value."""
+  updatedAt_lte: DateTime
+
+  """All values greater than the given value."""
+  updatedAt_gt: DateTime
+
+  """All values greater than or equal the given value."""
+  updatedAt_gte: DateTime
+  author: UserWhereInput
   comments_every: CommentWhereInput
   comments_some: CommentWhereInput
   comments_none: CommentWhereInput
 }
 
-input PostWhereUniqueInput {
+input ThreadWhereUniqueInput {
   id: ID
 }
 
-type Query {
-  users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
-  posts(where: PostWhereInput, orderBy: PostOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Post]!
-  comments(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Comment]!
-  user(where: UserWhereUniqueInput!): User
-  post(where: PostWhereUniqueInput!): Post
-  comment(where: CommentWhereUniqueInput!): Comment
-  usersConnection(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): UserConnection!
-  postsConnection(where: PostWhereInput, orderBy: PostOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): PostConnection!
-  commentsConnection(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): CommentConnection!
-
-  """Fetches an object given its ID"""
-  node(
-    """The ID of an object"""
-    id: ID!
-  ): Node
+type Upvote implements Node {
+  id: ID!
+  author: User!
+  Comment: Comment!
 }
 
-type Subscription {
-  user(where: UserSubscriptionWhereInput): UserSubscriptionPayload
-  post(where: PostSubscriptionWhereInput): PostSubscriptionPayload
-  comment(where: CommentSubscriptionWhereInput): CommentSubscriptionPayload
+"""A connection to a list of items."""
+type UpvoteConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [UpvoteEdge]!
+  aggregate: AggregateUpvote!
+}
+
+input UpvoteCreateInput {
+  id: ID
+  author: UserCreateOneWithoutUpvotesInput!
+  Comment: CommentCreateOneWithoutUpvotesInput!
+}
+
+input UpvoteCreateManyWithoutAuthorInput {
+  create: [UpvoteCreateWithoutAuthorInput!]
+  connect: [UpvoteWhereUniqueInput!]
+}
+
+input UpvoteCreateManyWithoutCommentInput {
+  create: [UpvoteCreateWithoutCommentInput!]
+  connect: [UpvoteWhereUniqueInput!]
+}
+
+input UpvoteCreateWithoutAuthorInput {
+  id: ID
+  Comment: CommentCreateOneWithoutUpvotesInput!
+}
+
+input UpvoteCreateWithoutCommentInput {
+  id: ID
+  author: UserCreateOneWithoutUpvotesInput!
+}
+
+"""An edge in a connection."""
+type UpvoteEdge {
+  """The item at the end of the edge."""
+  node: Upvote!
+
+  """A cursor for use in pagination."""
+  cursor: String!
+}
+
+enum UpvoteOrderByInput {
+  id_ASC
+  id_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type UpvotePreviousValues {
+  id: ID!
+}
+
+input UpvoteScalarWhereInput {
+  """Logical AND on all given filters."""
+  AND: [UpvoteScalarWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [UpvoteScalarWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [UpvoteScalarWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+}
+
+type UpvoteSubscriptionPayload {
+  mutation: MutationType!
+  node: Upvote
+  updatedFields: [String!]
+  previousValues: UpvotePreviousValues
+}
+
+input UpvoteSubscriptionWhereInput {
+  """Logical AND on all given filters."""
+  AND: [UpvoteSubscriptionWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [UpvoteSubscriptionWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [UpvoteSubscriptionWhereInput!]
+
+  """
+  The subscription event gets dispatched when it's listed in mutation_in
+  """
+  mutation_in: [MutationType!]
+
+  """
+  The subscription event gets only dispatched when one of the updated fields names is included in this list
+  """
+  updatedFields_contains: String
+
+  """
+  The subscription event gets only dispatched when all of the field names included in this list have been updated
+  """
+  updatedFields_contains_every: [String!]
+
+  """
+  The subscription event gets only dispatched when some of the field names included in this list have been updated
+  """
+  updatedFields_contains_some: [String!]
+  node: UpvoteWhereInput
+}
+
+input UpvoteUpdateInput {
+  author: UserUpdateOneRequiredWithoutUpvotesInput
+  Comment: CommentUpdateOneRequiredWithoutUpvotesInput
+}
+
+input UpvoteUpdateManyWithoutAuthorInput {
+  create: [UpvoteCreateWithoutAuthorInput!]
+  connect: [UpvoteWhereUniqueInput!]
+  set: [UpvoteWhereUniqueInput!]
+  disconnect: [UpvoteWhereUniqueInput!]
+  delete: [UpvoteWhereUniqueInput!]
+  update: [UpvoteUpdateWithWhereUniqueWithoutAuthorInput!]
+  deleteMany: [UpvoteScalarWhereInput!]
+  upsert: [UpvoteUpsertWithWhereUniqueWithoutAuthorInput!]
+}
+
+input UpvoteUpdateManyWithoutCommentInput {
+  create: [UpvoteCreateWithoutCommentInput!]
+  connect: [UpvoteWhereUniqueInput!]
+  set: [UpvoteWhereUniqueInput!]
+  disconnect: [UpvoteWhereUniqueInput!]
+  delete: [UpvoteWhereUniqueInput!]
+  update: [UpvoteUpdateWithWhereUniqueWithoutCommentInput!]
+  deleteMany: [UpvoteScalarWhereInput!]
+  upsert: [UpvoteUpsertWithWhereUniqueWithoutCommentInput!]
+}
+
+input UpvoteUpdateWithoutAuthorDataInput {
+  Comment: CommentUpdateOneRequiredWithoutUpvotesInput
+}
+
+input UpvoteUpdateWithoutCommentDataInput {
+  author: UserUpdateOneRequiredWithoutUpvotesInput
+}
+
+input UpvoteUpdateWithWhereUniqueWithoutAuthorInput {
+  where: UpvoteWhereUniqueInput!
+  data: UpvoteUpdateWithoutAuthorDataInput!
+}
+
+input UpvoteUpdateWithWhereUniqueWithoutCommentInput {
+  where: UpvoteWhereUniqueInput!
+  data: UpvoteUpdateWithoutCommentDataInput!
+}
+
+input UpvoteUpsertWithWhereUniqueWithoutAuthorInput {
+  where: UpvoteWhereUniqueInput!
+  update: UpvoteUpdateWithoutAuthorDataInput!
+  create: UpvoteCreateWithoutAuthorInput!
+}
+
+input UpvoteUpsertWithWhereUniqueWithoutCommentInput {
+  where: UpvoteWhereUniqueInput!
+  update: UpvoteUpdateWithoutCommentDataInput!
+  create: UpvoteCreateWithoutCommentInput!
+}
+
+input UpvoteWhereInput {
+  """Logical AND on all given filters."""
+  AND: [UpvoteWhereInput!]
+
+  """Logical OR on all given filters."""
+  OR: [UpvoteWhereInput!]
+
+  """Logical NOT on all given filters combined by AND."""
+  NOT: [UpvoteWhereInput!]
+  id: ID
+
+  """All values that are not equal to given value."""
+  id_not: ID
+
+  """All values that are contained in given list."""
+  id_in: [ID!]
+
+  """All values that are not contained in given list."""
+  id_not_in: [ID!]
+
+  """All values less than the given value."""
+  id_lt: ID
+
+  """All values less than or equal the given value."""
+  id_lte: ID
+
+  """All values greater than the given value."""
+  id_gt: ID
+
+  """All values greater than or equal the given value."""
+  id_gte: ID
+
+  """All values containing the given string."""
+  id_contains: ID
+
+  """All values not containing the given string."""
+  id_not_contains: ID
+
+  """All values starting with the given string."""
+  id_starts_with: ID
+
+  """All values not starting with the given string."""
+  id_not_starts_with: ID
+
+  """All values ending with the given string."""
+  id_ends_with: ID
+
+  """All values not ending with the given string."""
+  id_not_ends_with: ID
+  author: UserWhereInput
+  Comment: CommentWhereInput
+}
+
+input UpvoteWhereUniqueInput {
+  id: ID
 }
 
 type User implements Node {
   id: ID!
+  name: String!
   email: String!
   password: String!
+  description: String
+  image: String
+  Comments(where: CommentWhereInput, orderBy: CommentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Comment!]
+  Threads(where: ThreadWhereInput, orderBy: ThreadOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Thread!]
+  Upvotes(where: UpvoteWhereInput, orderBy: UpvoteOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Upvote!]
 }
 
 """A connection to a list of items."""
@@ -1006,8 +1548,62 @@ type UserConnection {
 
 input UserCreateInput {
   id: ID
+  name: String!
   email: String!
   password: String!
+  description: String
+  image: String
+  Comments: CommentCreateManyWithoutAuthorInput
+  Threads: ThreadCreateManyWithoutAuthorInput
+  Upvotes: UpvoteCreateManyWithoutAuthorInput
+}
+
+input UserCreateOneWithoutCommentsInput {
+  create: UserCreateWithoutCommentsInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateOneWithoutThreadsInput {
+  create: UserCreateWithoutThreadsInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateOneWithoutUpvotesInput {
+  create: UserCreateWithoutUpvotesInput
+  connect: UserWhereUniqueInput
+}
+
+input UserCreateWithoutCommentsInput {
+  id: ID
+  name: String!
+  email: String!
+  password: String!
+  description: String
+  image: String
+  Threads: ThreadCreateManyWithoutAuthorInput
+  Upvotes: UpvoteCreateManyWithoutAuthorInput
+}
+
+input UserCreateWithoutThreadsInput {
+  id: ID
+  name: String!
+  email: String!
+  password: String!
+  description: String
+  image: String
+  Comments: CommentCreateManyWithoutAuthorInput
+  Upvotes: UpvoteCreateManyWithoutAuthorInput
+}
+
+input UserCreateWithoutUpvotesInput {
+  id: ID
+  name: String!
+  email: String!
+  password: String!
+  description: String
+  image: String
+  Comments: CommentCreateManyWithoutAuthorInput
+  Threads: ThreadCreateManyWithoutAuthorInput
 }
 
 """An edge in a connection."""
@@ -1022,10 +1618,16 @@ type UserEdge {
 enum UserOrderByInput {
   id_ASC
   id_DESC
+  name_ASC
+  name_DESC
   email_ASC
   email_DESC
   password_ASC
   password_DESC
+  description_ASC
+  description_DESC
+  image_ASC
+  image_DESC
   updatedAt_ASC
   updatedAt_DESC
   createdAt_ASC
@@ -1034,8 +1636,11 @@ enum UserOrderByInput {
 
 type UserPreviousValues {
   id: ID!
+  name: String!
   email: String!
   password: String!
+  description: String
+  image: String
 }
 
 type UserSubscriptionPayload {
@@ -1078,13 +1683,88 @@ input UserSubscriptionWhereInput {
 }
 
 input UserUpdateInput {
+  name: String
   email: String
   password: String
+  description: String
+  image: String
+  Comments: CommentUpdateManyWithoutAuthorInput
+  Threads: ThreadUpdateManyWithoutAuthorInput
+  Upvotes: UpvoteUpdateManyWithoutAuthorInput
 }
 
 input UserUpdateManyMutationInput {
+  name: String
   email: String
   password: String
+  description: String
+  image: String
+}
+
+input UserUpdateOneRequiredWithoutCommentsInput {
+  create: UserCreateWithoutCommentsInput
+  connect: UserWhereUniqueInput
+  update: UserUpdateWithoutCommentsDataInput
+  upsert: UserUpsertWithoutCommentsInput
+}
+
+input UserUpdateOneRequiredWithoutThreadsInput {
+  create: UserCreateWithoutThreadsInput
+  connect: UserWhereUniqueInput
+  update: UserUpdateWithoutThreadsDataInput
+  upsert: UserUpsertWithoutThreadsInput
+}
+
+input UserUpdateOneRequiredWithoutUpvotesInput {
+  create: UserCreateWithoutUpvotesInput
+  connect: UserWhereUniqueInput
+  update: UserUpdateWithoutUpvotesDataInput
+  upsert: UserUpsertWithoutUpvotesInput
+}
+
+input UserUpdateWithoutCommentsDataInput {
+  name: String
+  email: String
+  password: String
+  description: String
+  image: String
+  Threads: ThreadUpdateManyWithoutAuthorInput
+  Upvotes: UpvoteUpdateManyWithoutAuthorInput
+}
+
+input UserUpdateWithoutThreadsDataInput {
+  name: String
+  email: String
+  password: String
+  description: String
+  image: String
+  Comments: CommentUpdateManyWithoutAuthorInput
+  Upvotes: UpvoteUpdateManyWithoutAuthorInput
+}
+
+input UserUpdateWithoutUpvotesDataInput {
+  name: String
+  email: String
+  password: String
+  description: String
+  image: String
+  Comments: CommentUpdateManyWithoutAuthorInput
+  Threads: ThreadUpdateManyWithoutAuthorInput
+}
+
+input UserUpsertWithoutCommentsInput {
+  update: UserUpdateWithoutCommentsDataInput!
+  create: UserCreateWithoutCommentsInput!
+}
+
+input UserUpsertWithoutThreadsInput {
+  update: UserUpdateWithoutThreadsDataInput!
+  create: UserCreateWithoutThreadsInput!
+}
+
+input UserUpsertWithoutUpvotesInput {
+  update: UserUpdateWithoutUpvotesDataInput!
+  create: UserCreateWithoutUpvotesInput!
 }
 
 input UserWhereInput {
@@ -1136,6 +1816,46 @@ input UserWhereInput {
 
   """All values not ending with the given string."""
   id_not_ends_with: ID
+  name: String
+
+  """All values that are not equal to given value."""
+  name_not: String
+
+  """All values that are contained in given list."""
+  name_in: [String!]
+
+  """All values that are not contained in given list."""
+  name_not_in: [String!]
+
+  """All values less than the given value."""
+  name_lt: String
+
+  """All values less than or equal the given value."""
+  name_lte: String
+
+  """All values greater than the given value."""
+  name_gt: String
+
+  """All values greater than or equal the given value."""
+  name_gte: String
+
+  """All values containing the given string."""
+  name_contains: String
+
+  """All values not containing the given string."""
+  name_not_contains: String
+
+  """All values starting with the given string."""
+  name_starts_with: String
+
+  """All values not starting with the given string."""
+  name_not_starts_with: String
+
+  """All values ending with the given string."""
+  name_ends_with: String
+
+  """All values not ending with the given string."""
+  name_not_ends_with: String
   email: String
 
   """All values that are not equal to given value."""
@@ -1216,6 +1936,95 @@ input UserWhereInput {
 
   """All values not ending with the given string."""
   password_not_ends_with: String
+  description: String
+
+  """All values that are not equal to given value."""
+  description_not: String
+
+  """All values that are contained in given list."""
+  description_in: [String!]
+
+  """All values that are not contained in given list."""
+  description_not_in: [String!]
+
+  """All values less than the given value."""
+  description_lt: String
+
+  """All values less than or equal the given value."""
+  description_lte: String
+
+  """All values greater than the given value."""
+  description_gt: String
+
+  """All values greater than or equal the given value."""
+  description_gte: String
+
+  """All values containing the given string."""
+  description_contains: String
+
+  """All values not containing the given string."""
+  description_not_contains: String
+
+  """All values starting with the given string."""
+  description_starts_with: String
+
+  """All values not starting with the given string."""
+  description_not_starts_with: String
+
+  """All values ending with the given string."""
+  description_ends_with: String
+
+  """All values not ending with the given string."""
+  description_not_ends_with: String
+  image: String
+
+  """All values that are not equal to given value."""
+  image_not: String
+
+  """All values that are contained in given list."""
+  image_in: [String!]
+
+  """All values that are not contained in given list."""
+  image_not_in: [String!]
+
+  """All values less than the given value."""
+  image_lt: String
+
+  """All values less than or equal the given value."""
+  image_lte: String
+
+  """All values greater than the given value."""
+  image_gt: String
+
+  """All values greater than or equal the given value."""
+  image_gte: String
+
+  """All values containing the given string."""
+  image_contains: String
+
+  """All values not containing the given string."""
+  image_not_contains: String
+
+  """All values starting with the given string."""
+  image_starts_with: String
+
+  """All values not starting with the given string."""
+  image_not_starts_with: String
+
+  """All values ending with the given string."""
+  image_ends_with: String
+
+  """All values not ending with the given string."""
+  image_not_ends_with: String
+  Comments_every: CommentWhereInput
+  Comments_some: CommentWhereInput
+  Comments_none: CommentWhereInput
+  Threads_every: ThreadWhereInput
+  Threads_some: ThreadWhereInput
+  Threads_none: ThreadWhereInput
+  Upvotes_every: UpvoteWhereInput
+  Upvotes_some: UpvoteWhereInput
+  Upvotes_none: UpvoteWhereInput
 }
 
 input UserWhereUniqueInput {
